@@ -5,7 +5,9 @@ import 'models/photo.dart';
 import 'services/unsplash_api.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({super.key, this.initialQuery});
+  final String? initialQuery; // ← when present, we show an AppBar/back
+
   @override
   State<SearchPage> createState() => _SearchPageState();
 }
@@ -26,7 +28,14 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _search(); // initial "popular" load
+
+    // If we were launched from a Category, seed the query + text field:
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _query = widget.initialQuery!;
+      _controller.text = _query;
+    }
+
+    _search(); // initial "popular" or seeded load
     _scroll.addListener(_onScroll);
   }
 
@@ -93,7 +102,20 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+
     return Scaffold(
+      // 👇 Add an AppBar ONLY when opened from a category (so a back arrow appears)
+      appBar: (widget.initialQuery != null && widget.initialQuery!.isNotEmpty)
+          ? AppBar(
+              title: Text(widget.initialQuery!),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+                tooltip: 'Back',
+              ),
+            )
+          : null,
+
       body: SafeArea(
         child: Column(
           children: [
